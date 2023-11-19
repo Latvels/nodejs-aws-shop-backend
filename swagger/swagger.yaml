@@ -1,0 +1,80 @@
+openapi: 3.0.0
+servers:
+  # Added by API Auto Mocking Plugin
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/LATVELS/nodejs-aws-shop-backend/1.0.0
+  - description: API for RS AWS task 3
+      discordNikName  @Latvels
+    url: http://127.0.0.1:3000/{basePath}
+info:
+  description: API for RS AWS task 3
+    Please take the backend URL from the pull request, because I don’t want to fire lambdas on swaggerhub
+  version: "1.0.0"
+  title: nodejs-aws-shop-backend
+  
+paths:
+  /products:
+    get:
+      responses:
+        200:
+          description: Get all products from the list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      nullable: false
+                    price:
+                      type: number
+                      nullable: true
+                    title:
+                      type: string
+                      nullable: false
+                    description:
+                      type: string
+                      nullable: true
+        404:
+          description: "Products haven't been found"
+        500:
+          description: "Internal server error"
+  /products/{productId}:
+    get:
+      responses:
+        200:
+          description: A list of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      nullable: false
+                    price:
+                      type: number
+                      nullable: true
+                    title:
+                      type: string
+                      nullable: false
+                    description:
+                      type: string
+                      nullable: true
+        402:
+          description: "Product id not specified or not valid" 
+        404:
+          description: "Product not found"  
+        500:
+          description: "Internal server error"
+    parameters:
+    - name: "productId"
+      in: "path"
+      description: "Search product ID"
+      required: true
+      schema:
+        type: "string"
