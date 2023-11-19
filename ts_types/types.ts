@@ -4,10 +4,11 @@ export interface IProduct {
   price: number,
   description: string,
 };
-
+// TODO: IReply remove any type
 export interface IReply {
   statusCode?: number,
   body?: IProduct[] | string | object,
+  headers?: any,
 };
 
 export interface IError {

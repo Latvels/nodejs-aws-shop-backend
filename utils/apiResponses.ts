@@ -4,6 +4,7 @@ export const apiReply = (reply: IReply) => {
   return {
     statusCode: reply.statusCode,
     body: JSON.stringify(reply.body),
+    headers: reply.headers,
   };
 };
 
