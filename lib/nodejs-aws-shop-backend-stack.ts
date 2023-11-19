@@ -35,7 +35,7 @@ export class NodejsAwsShopBackendStack extends cdk.Stack {
       requestTemplates: { "application/json": '{ "statusCode": "200" }' }
     });
 
-    const api = new apigateway.LambdaRestApi(this, "widgets-api", {
+    const api = new apigateway.LambdaRestApi(this, "nodejs-aws-shop-backend-api", {
       handler: getProductsLambda,
       proxy: false,
     });
