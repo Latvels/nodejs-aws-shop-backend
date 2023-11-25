@@ -11,7 +11,8 @@ export const apiReply = (reply: IReply) => {
 export const apiError = (error: IError) => {
   return {
     statusCode: error.statusCode,
-    message: error.message,
+    message: JSON.stringify(error.message),
     stack: error.stack,
+    headers: error?.headers,
   }
 };

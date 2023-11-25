@@ -9,7 +9,14 @@ export const handler = async (event?: APIGatewayProxyEvent | any) => {
 
     let requestedProduct = products.filter((el) => Number(el.id) === Number(event?.pathParameters?.product_id));
 
-    if (requestedProduct.length === 0) return apiError({ statusCode: 404, message: "Product not found" });
+    if (requestedProduct.length === 0) return apiReply({
+      statusCode: 404,
+      body: "Product not found",
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Credentials": true,
+      },
+    });
     return apiReply({
       statusCode: 200, 
       body: requestedProduct, 
