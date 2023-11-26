@@ -1,19 +1,25 @@
-import { products } from "../mocks/mocks_data";
-import { apiError, apiReply } from "../utils/apiResponses";
-import { APIGatewayProxyEvent } from "aws-lambda";
+import { DynamoDB } from 'aws-sdk';
 
-export const handler = async (event?: APIGatewayProxyEvent) => {
+const db = new DynamoDB.DocumentClient();
+
+export const handler = async (): Promise<any> => {
+
   try {
-    if (products.length === 0) return apiError({ statusCode: 404, message: "Product not found" });
-    return apiReply({
-      statusCode:200,
-      body: products,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Credentials": true,
-      },
+    const getProducts = await db.scan({TableName: "RS_products"}).promise();
+    const getStock = await db.scan({TableName: "RS_stock"}).promise();
+
+    getProducts.Items?.forEach((product) => {
+      product.count = getStock.Items?.find((el) => el.product_id === product.id)?.count || 0;
     });
-  } catch (error: any) {
-    return apiError(error);
+
+    return { statusCode: 200, body: JSON.stringify(getProducts.Items), headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Credentials": true,
+    }, };
+  } catch (dbError) {
+    return { statusCode: 500, body: JSON.stringify(dbError), headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Credentials": true,
+    }, };
   }
 };
