@@ -1,31 +1,57 @@
-import { products } from "../mocks/mocks_data";
 import { apiReply, apiError } from "../utils/apiResponses";
 import { APIGatewayProxyEvent } from "aws-lambda";
+import { DynamoDB } from 'aws-sdk';
+const db = new DynamoDB.DocumentClient();
 
 export const handler = async (event?: APIGatewayProxyEvent | any) => {
   try {
-    if (!event?.pathParameters?.product_id || !Number(event?.pathParameters?.product_id))
-      return apiError({ statusCode: 402, message: "Product id not specified or not valid" });
+    console.log("getProductById:", JSON.stringify(event));
 
-    let requestedProduct = products.filter((el) => Number(el.id) === Number(event?.pathParameters?.product_id));
+    const product_id = event?.pathParameters?.product_id;
 
-    if (requestedProduct.length === 0) return apiReply({
-      statusCode: 404,
-      body: "Product not found",
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Credentials": true,
+    const productParams = {
+      TableName: "RS_products",
+      Key: {
+        id: product_id
+      }
+    };
+    const stocksParams = {
+      TableName: "RS_stock",
+      Key: {
+        product_id: product_id,
       },
-    });
+    };
+    const product = await db.get(productParams).promise();
+    const stock = await db.get(stocksParams).promise();
+
+    if (!product) {
+      return apiReply({
+        statusCode: 404,
+        body: "Product not found",
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Credentials": true,
+        },
+      });
+    }
+    
+    const mergeTables = {
+      ...product.Item,
+      count: stock?.Item?.count || 0,
+    };
+
     return apiReply({
       statusCode: 200, 
-      body: requestedProduct, 
+      body: mergeTables, 
       headers: {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Credentials": true,
       },
     });
-  } catch (error: any) {
-    return apiError(error);
-  }
+    } catch (dbError) {
+      return { statusCode: 500, body: JSON.stringify(dbError), headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Credentials": true,
+      }, };
+    }
 };
