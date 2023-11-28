@@ -24,10 +24,10 @@ export const handler = async (event?: APIGatewayProxyEvent | any) => {
     const product = await db.get(productParams).promise();
     const stock = await db.get(stocksParams).promise();
 
-    if (!product) {
+    if (!product.Item) {
       return apiReply({
         statusCode: 404,
-        body: "Product not found",
+        body: { status: 404, message: "Product not found" },
         headers: {
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Credentials": true,
