@@ -47,11 +47,11 @@ export class NodejsAwsShopBackendStack extends cdk.Stack {
       proxy: false,
     });
 
-    const getProducts = api.root.addResource('products');
-    getProducts.addMethod('GET', getProductsIntegration);
-    const getProductById = getProducts.addResource('{product_id}');
+    const products = api.root.addResource('products');
+    products.addMethod('GET', getProductsIntegration);
+    const getProductById = products.addResource('{product_id}');
     getProductById.addMethod('GET', getProductsByIdIntegration);
-    const createProducts = getProducts.addResource('products');
-    createProducts.addMethod('POST', createProductIntegration);
+    // const createProducts = api.root.addResource('products');
+    products.addMethod('POST', createProductIntegration);
   }
 }
