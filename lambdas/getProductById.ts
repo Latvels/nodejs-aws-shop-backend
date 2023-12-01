@@ -1,4 +1,4 @@
-import { apiReply, apiError } from "../utils/apiResponses";
+import { responseBuilder } from "../utils/responseBuilder";
 import { APIGatewayProxyEvent } from "aws-lambda";
 import { DynamoDB } from 'aws-sdk';
 const db = new DynamoDB.DocumentClient();
@@ -24,34 +24,15 @@ export const handler = async (event?: APIGatewayProxyEvent | any) => {
     const product = await db.get(productParams).promise();
     const stock = await db.get(stocksParams).promise();
 
-    if (!product.Item) {
-      return apiReply({
-        statusCode: 404,
-        body: { status: 404, message: "Product not found" },
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Credentials": true,
-        },
-      });
-    }
+    if (!product.Item) return responseBuilder(404, { status: 404, message: "Product not found" });
     
     const mergeTables = {
       ...product.Item,
       count: stock?.Item?.count || 0,
     };
 
-    return apiReply({
-      statusCode: 200, 
-      body: mergeTables, 
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Credentials": true,
-      },
-    });
-    } catch (dbError) {
-      return { statusCode: 500, body: JSON.stringify(dbError), headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Credentials": true,
-      }, };
+    return responseBuilder(200, mergeTables);
+    } catch (Error) {
+      return responseBuilder(500, JSON.stringify(Error));
     }
 };

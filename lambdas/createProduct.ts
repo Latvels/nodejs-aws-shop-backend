@@ -1,8 +1,8 @@
-import { apiReply } from "../utils/apiResponses";
 import { APIGatewayProxyEvent } from "aws-lambda";
 import { DynamoDB } from 'aws-sdk';
 import * as yup from "yup";
 import { v4 as uuidv4 } from 'uuid';
+import { responseBuilder } from "../utils/responseBuilder";
 
 const db = new DynamoDB.DocumentClient();
 
@@ -20,7 +20,7 @@ export const handler = async (event?: APIGatewayProxyEvent | any) => {
   try {
     console.log("CreateProduct:", JSON.stringify(event));
     if (!event.body) {
-      return { statusCode: 400, body: 'invalid request, you are missing the parameter body' };
+      return responseBuilder(400, { message: 'invalid request, you are missing the parameter body'});
     }
     const data = typeof event.body == 'object' ? event.body : JSON.parse(event.body);
     const { count, ...productData } = data;
@@ -40,32 +40,17 @@ export const handler = async (event?: APIGatewayProxyEvent | any) => {
       Item: { product_id: productId, ...validateStockData },
     };
   
-    db.transactWrite({
+    await db.transactWrite({
       TransactItems: [{ Put: newProduct }, { Put: newStock }],
     })
     .promise();
-    // await db.put(newProduct).promise();
-    // await db.put(newStock).promise();
 
-    return apiReply({
-      statusCode: 200, 
-      body: { ...newProduct.Item, ...newStock.Item }, 
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Credentials": true,
-      },
-    });
-    } catch (dbError) {
-      if (dbError instanceof yup.ValidationError) {
-        return { statusCode: 400, body: dbError.errors.join("; "), headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Credentials": true,
-        }, };
+    return responseBuilder(200, { ...newProduct.Item, ...newStock.Item });
+    } catch (Error) {
+      if (Error instanceof yup.ValidationError) {
+        return responseBuilder(400, Error.errors.join("; "));
       } else {
-        return { statusCode: 500, body: JSON.stringify(dbError), headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Credentials": true,
-        }, };
+        return responseBuilder(500, JSON.stringify(Error));
       }
     }
 };
