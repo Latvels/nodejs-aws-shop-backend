@@ -4,6 +4,11 @@ export interface IProduct {
   price: number,
   description: string,
 };
+
+export interface IStock {
+  product_id: string,
+  count: number,
+}
 // TODO: IReply remove any type
 export interface IReply {
   statusCode?: number,

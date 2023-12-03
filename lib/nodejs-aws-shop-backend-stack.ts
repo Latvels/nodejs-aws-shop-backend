@@ -13,7 +13,7 @@ export class NodejsAwsShopBackendStack extends cdk.Stack {
 
     const sharedLambdaProps: NodejsFunctionProps = {
       environment: {},
-      runtime: lambda.Runtime.NODEJS_18_X,
+      runtime: lambda.Runtime.NODEJS_16_X,
       bundling: {
         externalModules: ["aws-sdk"],
       },
@@ -27,11 +27,18 @@ export class NodejsAwsShopBackendStack extends cdk.Stack {
       entry: "lambdas/getProductById.ts",
       ...sharedLambdaProps,
     });
-
     const getProductsIntegration = new apigateway.LambdaIntegration(getProductsLambda, {
       requestTemplates: { "application/json": '{ "statusCode": "200" }' }
     });
     const getProductsByIdIntegration = new apigateway.LambdaIntegration(getProductsByIdLambda, {
+      requestTemplates: { "application/json": '{ "statusCode": "200" }' }
+    });
+
+    const createProductLambda = new NodejsFunction(this, "createProduct", {
+      entry: "lambdas/createProduct.ts",
+      ...sharedLambdaProps,
+    });
+    const createProductIntegration = new apigateway.LambdaIntegration(createProductLambda, {
       requestTemplates: { "application/json": '{ "statusCode": "200" }' }
     });
 
@@ -40,9 +47,11 @@ export class NodejsAwsShopBackendStack extends cdk.Stack {
       proxy: false,
     });
 
-    const getProducts = api.root.addResource('products');
-    getProducts.addMethod('GET', getProductsIntegration);
-    const getProductById = getProducts.addResource('{product_id}');
+    const products = api.root.addResource('products');
+    products.addMethod('GET', getProductsIntegration);
+    const getProductById = products.addResource('{product_id}');
     getProductById.addMethod('GET', getProductsByIdIntegration);
+    // const createProducts = api.root.addResource('products');
+    products.addMethod('POST', createProductIntegration);
   }
 }
