@@ -1,9 +1,9 @@
-import * as AWS from "aws-sdk";
+import * as sdk from "aws-sdk";
 import { APIGatewayProxyEvent } from "aws-lambda";
 import { responseBuilder } from "../utils/responseBuilder";
 import endpoint from '../endpoints.config';
 
-const s3Bucket = new AWS.S3({ region: endpoint.REGION });
+const s3Bucket = new sdk.S3({ region: endpoint.REGION });
 
 exports.handler = async function (event: APIGatewayProxyEvent) {
   const fileName = event.queryStringParameters?.name;

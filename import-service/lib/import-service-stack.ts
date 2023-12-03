@@ -36,6 +36,19 @@ export class ImportServiceStack extends cdk.Stack {
       requestTemplates: { "application/json": '{ "statusCode": "200" }' }
     });
 
+    s3Bucket.grantPut(importProductLambda);
+
+    const importParseLambda = new NodejsFunction(this, "importParseFile", {
+      entry: "lambdas/importFileParser.ts",
+      ...sharedLambdaProps,
+    });
+    
+    s3Bucket.grantPut(importParseLambda);
+
+    s3Bucket.addEventNotification(
+      s3.EventType.OBJECT_CREATED,
+      new cdk.aws_s3_notifications.LambdaDestination(importParseLambda));
+
     const api = new apigateway.LambdaRestApi(this, "importProductApi", {
       handler: importProductLambda,
       proxy: false,
