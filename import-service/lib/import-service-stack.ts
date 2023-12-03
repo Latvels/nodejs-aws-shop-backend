@@ -1,14 +1,53 @@
-import * as cdk from 'aws-cdk-lib';
-import { aws_s3 as s3 } from 'aws-cdk-lib';
+import { Construct } from "constructs";
+import * as cdk from "aws-cdk-lib";
+import * as s3 from "aws-cdk-lib/aws-s3";
+import * as lambda from "aws-cdk-lib/aws-lambda";
+import * as apigateway from "aws-cdk-lib/aws-apigateway";
+import {
+  NodejsFunction,
+  NodejsFunctionProps,
+} from "aws-cdk-lib/aws-lambda-nodejs";
+import endpoint from '../endpoints.config';
 
 export class ImportServiceStack extends cdk.Stack {
-  constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    new s3.Bucket(this, 'RS_ImportService', {
+    const s3Bucket = new s3.Bucket(this, "importServiceBucket", {
+      bucketName: process.env.BUCKET_NAME,
       versioned: false,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
     });
-    // bucket.grantReadWrite(myLambda);
+    
+    const sharedLambdaProps: NodejsFunctionProps = {
+      runtime: lambda.Runtime.NODEJS_16_X,
+      bundling: {
+        externalModules: ["aws-sdk"],
+      },
+    };
+
+    const importProductLambda = new NodejsFunction(this, "importProductFile", {
+      entry: "lambdas/importProductsFile.ts",
+      ...sharedLambdaProps,
+    });
+    const importProductIntegration = new apigateway.LambdaIntegration(importProductLambda, {
+      requestTemplates: { "application/json": '{ "statusCode": "200" }' }
+    });
+
+    const api = new apigateway.LambdaRestApi(this, "importProductApi", {
+      handler: importProductLambda,
+      proxy: false,
+      defaultCorsPreflightOptions: {
+        allowOrigins: apigateway.Cors.ALL_ORIGINS,
+        allowMethods: apigateway.Cors.ALL_METHODS,
+        allowHeaders: ["*"],
+      },
+    });
+
+    const routes = api.root.addResource('import');
+    routes.addMethod('GET', importProductIntegration);
+
   }
 }

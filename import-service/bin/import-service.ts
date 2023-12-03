@@ -4,7 +4,8 @@ import * as cdk from 'aws-cdk-lib';
 import { ImportServiceStack } from '../lib/import-service-stack';
 import * as dotenv from 'dotenv';
 dotenv.config();
+import endpoint from '../endpoints.config';
 
 const app = new cdk.App();
-console.log("sssssss", process.env.ACCOUNT)
-new ImportServiceStack(app, 'ImportServiceStack', { env: { account: process.env.ACCOUNT, region: process.env.REGION }});
+new ImportServiceStack(app, 'ImportServiceStack', { env: { account: endpoint.ACCOUNT, region: endpoint.REGION }});
+app.synth();
