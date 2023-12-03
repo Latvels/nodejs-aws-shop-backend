@@ -47,7 +47,9 @@ export class ImportServiceStack extends cdk.Stack {
 
     s3Bucket.addEventNotification(
       s3.EventType.OBJECT_CREATED,
-      new cdk.aws_s3_notifications.LambdaDestination(importParseLambda));
+      new cdk.aws_s3_notifications.LambdaDestination(importParseLambda),
+      { prefix: "uploaded/" }
+    );
 
     const api = new apigateway.LambdaRestApi(this, "importProductApi", {
       handler: importProductLambda,
