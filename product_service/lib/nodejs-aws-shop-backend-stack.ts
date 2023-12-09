@@ -1,6 +1,7 @@
 import * as cdk from "aws-cdk-lib";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
+import * as iam from "aws-cdk-lib/aws-iam"
 import {
   NodejsFunction,
   NodejsFunctionProps,
@@ -23,17 +24,16 @@ export class NodejsAwsShopBackendStack extends cdk.Stack {
       entry: "lambdas/getProducts.ts",
       ...sharedLambdaProps,
     });
+    const getProductsIntegration = new apigateway.LambdaIntegration(getProductsLambda, {
+      requestTemplates: { "application/json": '{ "statusCode": "200" }' }
+    });
     const getProductsByIdLambda = new NodejsFunction(this, "getProductById", {
       entry: "lambdas/getProductById.ts",
       ...sharedLambdaProps,
     });
-    const getProductsIntegration = new apigateway.LambdaIntegration(getProductsLambda, {
-      requestTemplates: { "application/json": '{ "statusCode": "200" }' }
-    });
     const getProductsByIdIntegration = new apigateway.LambdaIntegration(getProductsByIdLambda, {
       requestTemplates: { "application/json": '{ "statusCode": "200" }' }
     });
-
     const createProductLambda = new NodejsFunction(this, "createProduct", {
       entry: "lambdas/createProduct.ts",
       ...sharedLambdaProps,
@@ -42,16 +42,29 @@ export class NodejsAwsShopBackendStack extends cdk.Stack {
       requestTemplates: { "application/json": '{ "statusCode": "200" }' }
     });
 
+    const dynamoDBPolicy = new iam.PolicyStatement({
+      actions: ["dynamodb:Scan", "dynamodb:Query", "dynamodb:GetItem", "dynamodb:PutItem"],
+      resources: ["*"],
+    })
+    
+    getProductsLambda.addToRolePolicy(dynamoDBPolicy);
+    getProductsByIdLambda.addToRolePolicy(dynamoDBPolicy);
+    createProductLambda.addToRolePolicy(dynamoDBPolicy);
+    
     const api = new apigateway.LambdaRestApi(this, "nodejs-aws-shop-backend-api", {
       handler: getProductsLambda,
       proxy: false,
+      defaultCorsPreflightOptions: {
+        allowOrigins: apigateway.Cors.ALL_ORIGINS,
+        allowMethods: apigateway.Cors.ALL_METHODS,
+        allowHeaders: ["*"],
+      },
     });
 
     const products = api.root.addResource('products');
     products.addMethod('GET', getProductsIntegration);
     const getProductById = products.addResource('{product_id}');
     getProductById.addMethod('GET', getProductsByIdIntegration);
-    // const createProducts = api.root.addResource('products');
     products.addMethod('POST', createProductIntegration);
   }
 }

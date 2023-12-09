@@ -1,5 +1,6 @@
 import { DynamoDB } from 'aws-sdk';
 import { APIGatewayProxyEvent } from "aws-lambda";
+import { responseBuilder } from "../utils/responseBuilder";
 
 const db = new DynamoDB.DocumentClient();
 
@@ -13,14 +14,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<any> => {
       product.count = getStock.Items?.find((el) => el.product_id === product.id)?.count || 0;
     });
 
-    return { statusCode: 200, body: JSON.stringify(getProducts.Items), headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Credentials": true,
-    }, };
+    return responseBuilder(200, JSON.stringify(getProducts.Items));
   } catch (dbError) {
-    return { statusCode: 500, body: JSON.stringify(dbError), headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Credentials": true,
-    }, };
+    return responseBuilder(500, JSON.stringify(dbError));
   }
 };
