@@ -7,6 +7,7 @@ import {
   NodejsFunction,
   NodejsFunctionProps,
 } from "aws-cdk-lib/aws-lambda-nodejs";
+import { Effect, PolicyStatement } from "aws-cdk-lib/aws-iam";
 import endpoint from '../endpoints.config';
 
 export class ImportServiceStack extends cdk.Stack {
@@ -38,11 +39,23 @@ export class ImportServiceStack extends cdk.Stack {
 
     s3Bucket.grantPut(importProductLambda);
 
+    const fileParsePolicy = new PolicyStatement({
+      effect: Effect.ALLOW,
+      actions: [
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:DeleteObject",
+        "s3:ListBucket",
+      ],
+      resources: [s3Bucket.bucketArn, `${s3Bucket.bucketArn}/*`],
+    });
+
     const importParseLambda = new NodejsFunction(this, "importParseFile", {
       entry: "lambdas/importFileParser.ts",
       ...sharedLambdaProps,
     });
-    
+
+    importParseLambda.addToRolePolicy(fileParsePolicy);
     s3Bucket.grantPut(importParseLambda);
 
     s3Bucket.addEventNotification(
