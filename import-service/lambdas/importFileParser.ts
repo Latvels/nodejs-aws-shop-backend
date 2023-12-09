@@ -1,9 +1,9 @@
 import { S3Event } from "aws-lambda";
-import * as AWS from "aws-sdk";
+import * as sdk from "aws-sdk";
 import csvParser from "csv-parser";
 import { Transform, TransformCallback } from "stream";
 
-const s3Bucket = new AWS.S3({ region: "eu-west-1" });
+const s3Bucket = new sdk.S3({ region: "eu-west-1" });
 
 exports.handler = async function (event: S3Event): Promise<void> {
   console.log("importFileParser:", JSON.stringify(event));
@@ -17,11 +17,11 @@ exports.handler = async function (event: S3Event): Promise<void> {
       .getObject(params)
       .createReadStream();
       console.log(`readFile start: ${params.Key}`);
-    await processReadableStream(s3ReadableStream, record);
+    await fileParseStream(s3ReadableStream, record);
   }
 };
 
-async function processReadableStream(
+async function fileParseStream(
   stream: NodeJS.ReadableStream,
   record: any
 ) {
