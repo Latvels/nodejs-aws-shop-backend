@@ -8,6 +8,9 @@ import {
   NodejsFunctionProps,
 } from "aws-cdk-lib/aws-lambda-nodejs";
 import { Effect, PolicyStatement } from "aws-cdk-lib/aws-iam";
+import * as sqs from "aws-cdk-lib/aws-sqs";
+import * as dotenv from "dotenv";
+dotenv.config();
 import endpoint from '../endpoints.config';
 
 export class ImportServiceStack extends cdk.Stack {
@@ -22,7 +25,17 @@ export class ImportServiceStack extends cdk.Stack {
       autoDeleteObjects: true,
     });
     
+    const catalogItemsQueue = sqs.Queue.fromQueueArn(
+      this,
+      process.env.SQS_QUEUE_NAME as string,
+      process.env.SQS_QUEUE_ARN as string,
+    );
+
     const sharedLambdaProps: NodejsFunctionProps = {
+      environment: {
+        BUCKET_NAME: s3Bucket.bucketName,
+        QUEUE_URL: catalogItemsQueue.queueUrl,
+      },
       runtime: lambda.Runtime.NODEJS_16_X,
       bundling: {
         externalModules: ["aws-sdk"],
@@ -57,6 +70,8 @@ export class ImportServiceStack extends cdk.Stack {
 
     importParseLambda.addToRolePolicy(fileParsePolicy);
     s3Bucket.grantPut(importParseLambda);
+
+    catalogItemsQueue.grantSendMessages(importParseLambda);
 
     s3Bucket.addEventNotification(
       s3.EventType.OBJECT_CREATED,
