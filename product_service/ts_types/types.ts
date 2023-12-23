@@ -1,8 +1,9 @@
 export interface IProduct {
-  title: string,
   id: string,
-  price: number,
+  title: string,
   description: string,
+  price: number,
+  count: number,
 };
 
 export interface IStock {

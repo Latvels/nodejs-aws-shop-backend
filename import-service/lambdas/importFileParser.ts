@@ -2,12 +2,14 @@ import { S3Event } from "aws-lambda";
 import * as sdk from "aws-sdk";
 import csvParser from "csv-parser";
 import { Transform, TransformCallback } from "stream";
+import * as dotenv from "dotenv";
+dotenv.config();
 
 const s3Bucket = new sdk.S3({ region: "eu-west-1" });
+const sqs = new sdk.SQS();
 
 exports.handler = async function (event: S3Event): Promise<void> {
-  console.log("importFileParser:", JSON.stringify(event));
-
+  // console.log("importFileParser:", JSON.stringify(event));
   for (const record of event.Records) {
     const params = {
       Bucket: record.s3.bucket.name,
@@ -33,7 +35,7 @@ async function fileParseStream(
         encoding: BufferEncoding,
         callback: TransformCallback
       ) {
-        console.log("csv file is parsing: ", JSON.stringify(chunk));
+        sendToSQS(chunk);
         callback();
       },
     });
@@ -76,4 +78,18 @@ async function fileParseStream(
       })
       .on("error", rej);
   });
-}
+};
+
+function sendToSQS(data: any) {
+  const params = {
+    QueueUrl: 'https://sqs.eu-west-1.amazonaws.com/653627665121/catalog-items-queue', // process.env.SQS_QUEUE_URL as string,
+    MessageBody: JSON.stringify(data),
+  };
+  sqs.sendMessage(params, (err) => {
+    if (err) {
+      console.error("Error sending message", err);
+    } else {
+      console.log("Message successfully", data.MessageId);
+    }
+  });
+};
