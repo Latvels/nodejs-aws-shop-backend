@@ -13,8 +13,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<any> => {
     getProducts.Items?.forEach((product) => {
       product.count = getStock.Items?.find((el) => el.product_id === product.id)?.count || 0;
     });
-
-    return responseBuilder(200, JSON.stringify(getProducts.Items));
+    
+    return responseBuilder(200, getProducts.Items as any);
   } catch (dbError) {
     return responseBuilder(500, JSON.stringify(dbError));
   }
